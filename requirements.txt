@@ -1,6 +1,6 @@
 streamlit
 pillow
 numpy
-tensorflow
 fpdf
 pandas
+tflite-runtime
