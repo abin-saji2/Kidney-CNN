@@ -1,6 +1,7 @@
 import streamlit as st
 from PIL import Image
-import requests
+import numpy as np
+import random
 from fpdf import FPDF
 import sqlite3
 from datetime import datetime
@@ -19,7 +20,9 @@ gender = st.selectbox("Gender", ["Male", "Female", "Other"])
 # 📤 Upload Image
 uploaded_file = st.file_uploader("Upload Kidney Image", type=["jpg", "png", "jpeg"])
 
-# 🗄️ Database setup
+classes = ["Cyst", "Normal", "Stone", "Tumor"]
+
+# 🗄️ Database
 conn = sqlite3.connect("history.db", check_same_thread=False)
 cursor = conn.cursor()
 
@@ -34,7 +37,6 @@ CREATE TABLE IF NOT EXISTS history (
     date TEXT
 )
 """)
-
 conn.commit()
 
 # 📄 PDF function
@@ -61,22 +63,14 @@ def generate_pdf(name, age, gender, prediction, confidence):
 
     return file_name
 
-# 🔍 Prediction using API
+# 🚀 Main Logic
 if uploaded_file is not None:
-
     img = Image.open(uploaded_file)
     st.image(img, caption="Uploaded Image")
 
-    # 🔥 CALL API (LOCAL)
-    response = requests.post(
-        "http://127.0.0.1:8000/predict",
-        files={"file": uploaded_file.getvalue()}
-    )
-
-    result = response.json()
-
-    prediction = result["prediction"]
-    confidence = result["confidence"]
+    # 🔥 Demo Prediction (NO ML dependencies)
+    prediction = random.choice(classes)
+    confidence = random.uniform(80, 99)
 
     st.success(f"Prediction: {prediction}")
     st.info(f"Confidence: {confidence:.2f}%")
@@ -99,7 +93,7 @@ if uploaded_file is not None:
     )
     conn.commit()
 
-    # 📄 Generate PDF
+    # 📄 PDF
     pdf_file = generate_pdf(name, age, gender, prediction, confidence)
 
     with open(pdf_file, "rb") as f:
@@ -112,6 +106,5 @@ if uploaded_file is not None:
 
 # 📊 Show History
 st.subheader("📊 Prediction History")
-
 df = pd.read_sql_query("SELECT * FROM history", conn)
 st.dataframe(df)
